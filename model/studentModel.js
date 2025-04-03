@@ -2,6 +2,7 @@ const mongoosh = require("mongoose")
 const Validator = require("validator")
 const CS_DB = require("./../config/CS_DB")
 const BCA_DB = require("./../config/BCA_DB")
+const tamilDB = require("./../config/tamilDB")
 
 
 const studentSchema = new mongoosh.Schema({
@@ -123,6 +124,7 @@ const studentSchema = new mongoosh.Schema({
 
 const CS_STUDENT =  CS_DB.model("CS_students",studentSchema)
 const BCA_STUDENT =  BCA_DB.model("BCA_students",studentSchema)
+const TAMIL_STUDENT = tamilDB.model("tamil_students",studentSchema)
 
 
-module.exports = { CS_STUDENT, BCA_STUDENT }
+module.exports = { CS_STUDENT, BCA_STUDENT, TAMIL_STUDENT }

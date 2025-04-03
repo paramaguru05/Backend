@@ -1,8 +1,7 @@
 const asyncErrorHandler = require("../../utils/asyncErrorHandler")
 const CustomError = require("./../../utils/customError")
-const {CS_Teacther} = require("./../../model/teacherModel")
+const { tamil_teacher } = require("./../../model/teacherModel")
 const ApiFeatures = require("./../../utils/apiFeatures")
-const {sendEmail} = require("./../../utils/sentMail")
 const validator = require("validator")
 const jwt = require("jsonwebtoken")
 const bcript = require("bcryptjs")
@@ -10,43 +9,32 @@ const bcript = require("bcryptjs")
 exports.createTeacher = asyncErrorHandler(async ( req, res, next ) =>{
 
 
-    let csPattern = /computer science/i
-
-    if( req?.userData?.role != "HOD" && req?.userData?.role != "admin" ) throw new CustomError(" only HOD can add a staff",401);
+    if( req?.userData?.role != "HOD" && req?.userData?.role != "admin" ) throw new CustomError(" only HOD or admin can add a staff",401);
     if(req?.userData?.role != "admin"){
-        if( !csPattern.test( req?.userData?.department[0]) ) throw new CustomError("This resourse only accessed by computer science HOD",401)
+        if( req?.userData?.route != "tamil" ) throw new CustomError("This resourse only accessed by tamil HOD",401)
     }
 
-    req.body.route = "CS"    
-    await CS_Teacther.create( req.body )
+    await tamil_teacher.create( req.body )
+
+    await tamil_teacher.updateMany({_id:{$exists:true}},{route:"tamil"})
+
     res.status(201).json({
         status:"Success",
-        message:"CS teacher successfuly created "
+        message:"Tamil staff successfuly created "
     })
 })
 
 
 
-
-exports.setRout = async (req,res) =>{
-    await CS_Teacther.updateMany({_id:{$exists:true}},{route:"CS"})
-    res.status(200).json({
-        status:"Success",
-        message:"Teacher route cs set"
-    })
-}
-
 exports.getTeachers = asyncErrorHandler( async ( req, res,next ) =>{
-    
-    console.log( "Get staffs", req.userData )
-    let csPattern = /computer science/i
-    if( req?.userData?.role != "HOD" && req?.userData?.role != "admin") throw new CustomError("This resourse only accessed by HOD",401)
+
+    if( req?.userData?.role != "HOD" && req?.userData?.role != "admin") throw new CustomError("This resourse only accessed by HOD or admin",401)
 
     if(req?.userData?.role != "admin" ){
-       if( !csPattern.test( req?.userData?.department[0]) ) throw new CustomError("This resourse only accessed by computer science HOD",401)
+       if( req?.userData?.route != "tamil" ) throw new CustomError("This resourse only accessed by tamil HOD",401)
     }
 
-    let apiFeatures = new ApiFeatures(CS_Teacther.find(),req.query).filter().sort().limit().limitFields()
+    let apiFeatures = new ApiFeatures(tamil_teacher.find(),req.query).filter().sort().limit().limitFields()
     let data = await apiFeatures.query
         res.status(200).json({
             status:"Success",
@@ -59,11 +47,9 @@ exports.getTeachers = asyncErrorHandler( async ( req, res,next ) =>{
 
 exports.getSingleStaff = asyncErrorHandler( async (req,res,next) =>{
    
-    console.log( req.userData )
-
    if(!req.userData) throw new CustomError("Unauthorized access please login into access resourse",401);
    
-   if( req.userData.route != "CS") throw new CustomError("Can not access other department staff",401)
+   if( req.userData.route != "tamil") throw new CustomError("Can not access other department staff",401)
 
    let id =  req.query.id
    let email = req?.userData?.email
@@ -77,9 +63,9 @@ exports.getSingleStaff = asyncErrorHandler( async (req,res,next) =>{
 
    let data;
    if( validator.isEmail(id) ){
-    data = await CS_Teacther.findOne({email:id})
+    data = await tamil_teacher.findOne({email:id})
    }else{
-    data = await CS_Teacther.findById(id)
+    data = await tamil_teacher.findById(id)
    }
 
    res.status(200).json({
@@ -95,14 +81,14 @@ exports.deleteStaff = asyncErrorHandler( async (req,res,next) =>{
     if( req.userData.role != "HOD" && req.userData.role != "admin" ) throw new CustomError("Can not access resorse",403)
     
     if( req.userData.role != "admin" ){
-        if( req.userData.route != "CS" ) throw new CustomError("Only CS HOD can delete a staff")
+        if( req.userData.route != "tamil" ) throw new CustomError("Only tamil HOD can delete a staff")
     }
 
     let id =  req.params.id 
-    await CS_Teacther.deleteOne({_id:id})
+    await tamil_teacher.deleteOne({_id:id})
     res.status(204).json({
         status:"Success",
-        message:"CS staff deleted successfully"
+        message:"Tamil staff deleted successfully"
     })
 })
 
@@ -112,7 +98,7 @@ exports.staffLogin = asyncErrorHandler( async(req,res) =>{
 
         if( !email || !password) throw new CustomError("Email and password is required",400)
 
-        const data = await CS_Teacther.find({email}).select("+password")
+        const data = await tamil_teacher.find({email}).select("+password")
 
         if( !data.length ) throw new CustomError("Incorrect email or password",400)
         if( !data[0].password ) throw new CustomError("Password is not set",400)
@@ -134,10 +120,11 @@ exports.staffLogin = asyncErrorHandler( async(req,res) =>{
 })
 
 
+
 exports.forgetPassword = asyncErrorHandler( async(req,res,nex)=>{
 
     let {email} = req.body
-    let data = await CS_Teacther.findOne({email})
+    let data = await tamil_teacher.findOne({email})
     if( !data?.email) throw new CustomError("Account not found can not change password",401)
     let otp = ""
     for(let i=1; i<=4; i++){
@@ -145,21 +132,14 @@ exports.forgetPassword = asyncErrorHandler( async(req,res,nex)=>{
     }
 
     data.otp = otp
-    data.optExpires = Date.now() + ( 1000 * 60 * 2)
     await data.save()
-   
-    let response = await  sendEmail(data.email,otp)
-
-    console.log( response )
-
-
     res.status(200).json({
         status:"Success",
-        message:"OTP sent success",
+        message:"Account vrified",
         payload:{
+            otp,
             email:data.email,
-            route:data.route,
-            role:data.role
+            route:data.route
         }
     })
 })
@@ -167,15 +147,13 @@ exports.forgetPassword = asyncErrorHandler( async(req,res,nex)=>{
 exports.verifyOTP = asyncErrorHandler( async (req,res,next)=>{
     let otp = req.body.otp
     let email = req.body.email
-    let user = await CS_Teacther.findOne({email})
+    let user = await tamil_teacher.findOne({email})
+
+    if(!user) throw new CustomError("Invalid otp or email",400)
+
     if( otp != user.otp) throw new CustomError("OTP is invalid",400)
 
-    if( user.optExpires < Date.now()){
-        throw new CustomError("OTP was expired",400)
-    }
-
     user.otp = undefined;
-    user.optExpires = undefined
     await user.save()
     res.status(200).json({
        status:"Success",
@@ -186,7 +164,7 @@ exports.verifyOTP = asyncErrorHandler( async (req,res,next)=>{
 exports.resetPassword = asyncErrorHandler( async (req,res,next)=>{
    let email =  req.body.email
    let password = req.body.password
-   let user = await CS_Teacther.findOne({email})
+   let user = await tamil_teacher.findOne({email})
    user.password = await bcript.hash(password,10)
    await user.save()
    res.status(200).json({
@@ -198,26 +176,17 @@ exports.resetPassword = asyncErrorHandler( async (req,res,next)=>{
 
 exports.updateStaff = asyncErrorHandler ( async (req,res,next) =>{
     if( !req.userData ) throw new CustomError("Unauthorized access",401)
-    console.log( req.userData )
+   
     if( req.userData.role != "admin" && req.userData.role != "HOD") throw new CustomError("Unauthorized access",401)
     
-    if( req.userData.role === "HOD" && req.userData.route != "CS") throw new CustomError("Only computer science HOD can access",401)
+    if( req.userData.role === "HOD" && req.userData.route != "tamil") throw new CustomError("Only tamil HOD can access",401)
 
     if( !req.body.id ) throw new CustomError("Can not update without id",400)
     
-    await CS_Teacther.updateOne({_id:req.body.id},req.body)
+    await tamil_teacher.updateOne({_id:req.body.id},req.body)
 
     res.status(201).json({
-        message:"Successfully computer science staff updated"
+        message:"Successfully tamil staff updated"
     })
 
 })
-
-// exports.getTeacher = asyncErrorHandler( async (req,res,next) =>{
-//    let id = req.params.id
-//    let data = await CS_Teacther.findById(id)
-//    res.status(200).json({
-//     status:"Success",
-//     data
-//    })
-// })

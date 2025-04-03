@@ -1,6 +1,7 @@
 const asyncErrorHandler = require("./../../utils/asyncErrorHandler")
 const CustomError = require("./../../utils/customError")
 const ApiFeatuer = require("./../../utils/apiFeatures")
+const sentMail = require("./../../utils/sentMail")
 const adminModel = require("./../../model/adminModel")
 const jwt = require("jsonwebtoken")
 
@@ -69,12 +70,15 @@ exports.updateAdmin = asyncErrorHandler( async (req,res,next) =>{
 exports.adminLogin = asyncErrorHandler( async (req,res,next) =>{
 
     let {email,password} = req.body
+    console.log( email, password )
 
     if( !email || !password) throw new CustomError("Email id & password is required",400)
 
     let data = await adminModel.findOne({email}).select("+password")
 
     if( !data ) throw new CustomError("Invalid email id or password",400)
+    
+    if( !data.password ) throw new CustomError("Invalid email id or password",400)
 
     let isMatch = await data.comparePassword(password,data.password)
 
@@ -109,12 +113,16 @@ exports.forgetPassword = asyncErrorHandler ( async (req,res,next) =>{
     }
 
     data.otp = otp
+    data.optExpires = Date.now() + ( 1000 * 60 * 2)
     await data.save()
+    
+    sentMail(data.email,"test mail",`Your otp is: ${otp} and expires 2 minits`)
+    
     res.status(200).json({
         status:"Success",
         payload:{
-            otp: data.otp,
-            email
+            email,
+            role: data.role
         }
     })
 })

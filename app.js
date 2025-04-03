@@ -3,6 +3,7 @@ const app = express()
 const cors = require("cors")
 const BCARouter = require("./router/bcaRouter")
 const csRouter = require("./router/csRouter")
+const tamilRouter = require("./router/tamilRouter")
 const libraryRouter = require("./router/libraryRouter")
 const adminRoute = require("./router/adminRouter")
 const GEH = require("./utils/globalErrorHandler")
@@ -16,10 +17,11 @@ app.get("/",(req,res,)=>{
     res.send({data:"Home page"})
 })
 
-app.use("/api/v1/admins",adminRoute)
+app.use("/api/v1/admins/",adminRoute)
+app.use("/api/v1/tamil/",tamilRouter)
 app.use("/api/v1/BCA/",BCARouter)
 app.use("/api/v1/CS/",csRouter)
-app.use("/api/v1/library",libraryRouter)
+app.use("/api/v1/library/",libraryRouter)
 
 app.all("*",(req,res,next)=>{
     console.log("affter excute 2")

@@ -2,6 +2,7 @@ const mongoose = require("mongoose")
 const adminDB = require("./../config/adminDB")
 const CS_DB = require("./../config/CS_DB")
 const BCA_DB = require("./../config/BCA_DB")
+const tamilDB = require("./../config/tamilDB")
 
 
 const announceSchema = new mongoose.Schema({
@@ -25,6 +26,7 @@ const announceSchema = new mongoose.Schema({
 const csAnnouncement = CS_DB.model("cs_announcement",announceSchema)
 const bcaAnnouncement = BCA_DB.model("bca_announcemnet",announceSchema)
 const admin_announce = adminDB.model('admin_announce',announceSchema)
+const tamilAnnounce = tamilDB.model("tamil_announcements",announceSchema)
 
 
-module.exports = { csAnnouncement, bcaAnnouncement, admin_announce}
+module.exports = { csAnnouncement, bcaAnnouncement, admin_announce, tamilAnnounce}

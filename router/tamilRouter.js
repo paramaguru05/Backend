@@ -1,10 +1,13 @@
-const {createAttenanceList,createStudent,getStudent,studentLogin,getStudents,updateStudent,deleteStudent,postAttendance,createMultipleStudents,getAttendance,updateFees,getStudentDataForUpdateFees,setSemesterFees} = require("./../controller/BCAController/studentController")
-const {updateStaff,createTeacher,getTeachers,staffLogin,getSingleStaff,deleteStaff,forgetPassword,verifyOTP,resetPassword} = require("./../controller/BCAController/teacherController")
-const {deleteAnnouncement,getAnnouncement,postAnnouncement} = require("./../controller/BCAController/announcementController")
+const express = require('express')
+const router = express()
+
+const {createAttenanceList,createStudent,getStudent,studentLogin,getStudents,updateStudent,deleteStudent,postAttendance,createMultipleStudents,getAttendance,updateFees,getStudentDataForUpdateFees,setSemesterFees} = require("./../controller/TamilController/studentController")
+const {updateStaff,createTeacher,getTeachers,staffLogin,getSingleStaff,deleteStaff,forgetPassword,verifyOTP,resetPassword} = require("./../controller/TamilController/teacherController")
+const {deleteAnnouncement,getAnnouncement,postAnnouncement} = require("./../controller/TamilController/announcementController")
 const {productAdmin} = require("./../controller/adminController.js/adminController")
 const {productStudents,productStaff} = require("./../utils/productRoute")
-const express = require("express")
-const router = express.Router()
+
+
 
 // route for student
 
@@ -21,9 +24,6 @@ router.route("/students/:id")
       .delete(productAdmin,productStaff,deleteStudent)
       .get(productAdmin,productStaff,productStudents,getStudent)
       
-
-router.route('/multi-students')
-      .post(productStaff,createMultipleStudents)
 
 // route for staff
 router.route('/staff')
@@ -48,7 +48,6 @@ router.route("/staff/verifyOTP")
 
 router.route("/staff/resetPassword")
       .post(resetPassword)
-
 
 // route for attendance 
 

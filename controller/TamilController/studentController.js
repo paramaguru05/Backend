@@ -1,7 +1,7 @@
-const { BCA_STUDENT } = require("./../../model/studentModel")
-const ApiFeatures = require("./../../utils/apiFeatures")
-const asyncErrorHandler = require("./../../utils/asyncErrorHandler")
-const CustomError = require("./../../utils/customError")
+const { TAMIL_STUDENT } = require("../../model/studentModel")
+const ApiFeatures = require("../../utils/apiFeatures")
+const asyncErrorHandler = require("../../utils/asyncErrorHandler")
+const CustomError = require("../../utils/customError")
 const jwt = require("jsonwebtoken")
 
 
@@ -19,13 +19,16 @@ exports.createStudent = asyncErrorHandler(async (req,res,next) =>{
         
         if(req?.userData?.role != "staff" && req?.userData?.role != "HOD" ){
             throw new CustomError("Only staff or HOD can add a student",401)
-        }else if( req?.userData?.route != "BCA" ){
-            throw new CustomError("Only BCA staff or HOD can add a student",401)
+        }else if( req?.userData?.route != "tamil" ){
+            throw new CustomError("Only tamil staff or HOD can add a student",401)
         }
     }
     
-      req.body.route = "CS"
-        await BCA_STUDENT.create(req.body)
+       
+        await TAMIL_STUDENT.create(req.body)
+
+        await TAMIL_STUDENT.updateMany({_id:{$exists:true}},{route:"tamil"})
+
         res.status(201).json({
             status:"Success",
             message:"Student created successfully"
@@ -35,10 +38,10 @@ exports.createStudent = asyncErrorHandler(async (req,res,next) =>{
 exports.getStudents = asyncErrorHandler( async(req,res) =>{
        
        if( req?.userData?.role === "staff" || req?.userData?.role === "HOD" || req?.userData?.role === "admin"){ 
-           
-           if( req?.userData?.role != "admin" && req?.userData?.route != "BCA"  ) throw new CustomError("Only BCA staff or admin can access",401);
 
-            let feature =  new ApiFeatures(BCA_STUDENT.find(),req.query).filter().limitFields().sort().limit()
+            if( req?.userData?.role != "admin" && req?.userData?.route != "tamil"  ) throw new CustomError("Only Tamil staff or admin can access",401);
+        
+            let feature =  new ApiFeatures( TAMIL_STUDENT.find(),req.query).filter().limitFields().sort().limit()
             let data = await feature.query
             res.status(200).json({
                 status:"Success",
@@ -55,12 +58,11 @@ exports.getStudents = asyncErrorHandler( async(req,res) =>{
 exports.createAttenanceList = asyncErrorHandler( async(req,res) =>{
        
        if( req?.userData?.role === "staff" || req?.userData?.role === "HOD" || req?.userData?.role === "admin"){ 
-                
-       
+           
             let currentDay = new Date
             currentDay = currentDay.toLocaleDateString()
-            console.log( req.query.currentYear )
-            let singleData = await BCA_STUDENT.findOne({currentYear:req.query.currentYear,degree:req.query.degree})
+
+            let singleData = await TAMIL_STUDENT.findOne({currentYear:req.query.currentYear,degree:req.query.degree})
             console.log( singleData )
             
             if(singleData.attendance[ singleData.attendance.length - 1 ].date === currentDay){
@@ -68,7 +70,7 @@ exports.createAttenanceList = asyncErrorHandler( async(req,res) =>{
             }
 
 
-            let feature =  new ApiFeatures(BCA_STUDENT.find(),req.query).filter().limitFields().sort().limit()
+            let feature =  new ApiFeatures(TAMIL_STUDENT.find(),req.query).filter().limitFields().sort().limit()
             let data = await feature.query
 
             res.status(200).json({
@@ -85,10 +87,10 @@ exports.createAttenanceList = asyncErrorHandler( async(req,res) =>{
 
 exports.getStudent = asyncErrorHandler( async (req,res,next) =>{
 
-        if( req.userData.route != "BCA") throw new CustomError("Only computer BCA staff or HOD can access",401)
+        if( req.userData.route != "tamil") throw new CustomError("Only tamil staff or HOD can access",401)
 
         const id =  req.params.id
-        let data = await BCA_STUDENT.findOne({$or:[ {registerNo:id}, {email:id}] })
+        let data = await TAMIL_STUDENT.findOne({$or:[ {registerNo:id}, {email:id}] })
         if( !data?._id ) throw new CustomError("Student data not found",404)
         res.status(200).json({
             status:"Success",
@@ -106,12 +108,12 @@ exports.studentLogin = asyncErrorHandler(async (req,res,next) =>{
         if(dob[2].startsWith('0')){
           dob[2] = dob[2].slice(1)
         }
+
         withoutZero = dob.join("-")
-        console.log( id, DOB,withoutZero )
         
         if( !id || !DOB) throw new CustomError("Register number or date of birth is incorected",400)
 
-        let data =  await BCA_STUDENT.findOne({$or:[{registerNo:id},{email:id}]})
+        let data =  await TAMIL_STUDENT.findOne({$or:[{registerNo:id},{email:id}]})
         if( data === null ) throw new CustomError("Invalid register Number or data of birth",400)
        
 
@@ -138,16 +140,17 @@ exports.getAttendance = asyncErrorHandler( async ( req, res, next )=>{
     if( !req.userData ) throw new CustomError("Unauthorized access",401)
 
     if(req?.userData?.role != "admin"){
-        if( req.userData.route != "BCA" )  throw new CustomError("Only andmin or BCA staff can access",403)
-        if(  req?.userData?.role != "staff" && req?.userData?.role != "HOD" && req?.userData?.role != "admin") throw new CustomError("Only andmin or BCA staff can access",403)
+        if( req.userData.route != "tamil" )  throw new CustomError("Only andmin or tamil staff can access",403)
+        if(  req?.userData?.role != "staff" && req?.userData?.role != "HOD" && req?.userData?.role != "admin") throw new CustomError("Only andmin or tamil staff can access",403)
     }
 
     let {date,year,degree,present} = req.query    
 
+    
     if( !date) date = currentDay.toLocaleDateString() 
     if( date ) date = date.replace(/\b(-)\b/g, (match)=> `/`)
-        
-    let data = await BCA_STUDENT.aggregate([
+
+    let data = await TAMIL_STUDENT.aggregate([
         {
             $unwind:"$attendance"
         },
@@ -168,6 +171,8 @@ exports.getAttendance = asyncErrorHandler( async ( req, res, next )=>{
             }
         }
     ])
+
+    console.log( data )
 
     const departmentAttendance = {
         UG:{
@@ -279,8 +284,8 @@ exports.updateStudent = asyncErrorHandler(async (req, res, next) =>{
         
         if(req?.userData?.role != "staff" && req?.userData?.role != "HOD" ){
             throw new CustomError("Only staff or HOD can update a student",401)
-        }else if( req?.userData?.route != "BCA"  ){
-            throw new CustomError("Only computer science staff or HOD can update a student",401)
+        }else if( req?.userData?.route != "tamil"  ){
+            throw new CustomError("Only tamil staff or HOD can update a student",401)
         }
     }
 
@@ -288,7 +293,7 @@ exports.updateStudent = asyncErrorHandler(async (req, res, next) =>{
 
     if(!registerNo) throw new CustomError("Register number is required",400)
 
-    await BCA_STUDENT.updateOne({registerNo},req.body,{runValidators:true})
+    await TAMIL_STUDENT.updateOne({registerNo},req.body,{runValidators:true})
 
     res.status(200).json({
         status:"Success",
@@ -302,14 +307,14 @@ exports.deleteStudent = asyncErrorHandler(async (req,res,next) =>{
     if( !req.userData) throw new CustomError("Unauthorized access",401)
         
     if(req?.userData?.role != "staff" && req?.userData?.role != "HOD" ){
-       throw new CustomError("Only BCA staff or HOD can delete a student",401)
-    }else if(req?.userData?.route != "BCA" ){
-       throw new CustomError("Only BCA staff or HOD can delete a student",401)
+       throw new CustomError("Only tamil staff or HOD can delete a student",401)
+    }else if(req?.userData?.route != "tamil" ){
+       throw new CustomError("Only tamil staff or HOD can delete a student",401)
     }
 
     const {id} =  req.params 
 
-    await BCA_STUDENT.deleteOne({registerNo:id})
+    await TAMIL_STUDENT.deleteOne({registerNo:id})
 
         res.status(200).json({
             message:"Successfully student deleted"
@@ -325,22 +330,12 @@ exports.postAttendance = asyncErrorHandler(async (req,res,next) =>{
 
     let data =  req.body 
     for(let i = 0 ; i < data.length ; i++ ){
-        await BCA_STUDENT.updateOne({_id:data[i]._id},{ $push:{ attendance : data[i].attendance } })
+        await TAMIL_STUDENT.updateOne({_id:data[i]._id},{ $push:{ attendance : data[i].attendance } })
     }
     res.status(201).json({
             message:"Attendance posted successfully"
     })
 
-})
-
-
-exports.createMultipleStudents = asyncErrorHandler( async (req,res,next)=>{
-    await BCA_STUDENT.insertMany(req.body)
-    await BCA_STUDENT.updateMany({route:{$exists:false}},{$set:{route:"CS"}})
-    res.status(200).json({
-        status:"Success",
-        message:"Multiple CS student created successfully"
-    })
 })
 
 exports.updateFees = asyncErrorHandler( async (req,res,next) =>{
@@ -355,7 +350,7 @@ exports.updateFees = asyncErrorHandler( async (req,res,next) =>{
     if(!bus) bus = 0;
     
 
-    let data =  await BCA_STUDENT.findOne({registerNo},{name:1,fees:1,registerNo:1,email:1,degree:1,currentYear:1})
+    let data =  await TAMIL_STUDENT.findOne({registerNo},{name:1,fees:1,registerNo:1,email:1,degree:1,currentYear:1})
     
     if( tution > 0 && data.fees.tutionFeesBalance === 0 ) throw new CustomError("All ready tution fees fully payed ",400)
     
@@ -368,9 +363,9 @@ exports.updateFees = asyncErrorHandler( async (req,res,next) =>{
     if( bus >= data.fees.busFeesBalance + 1 ) throw new CustomError("Can not pay more then blance bus fees ammount",400)
     
 
-     await BCA_STUDENT.updateOne({registerNo}, {$inc:{ 'fees.tutionFeesBalance':-tution,'fees.busFeesBalance':-bus,  } })
+     await TAMIL_STUDENT.updateOne({registerNo}, {$inc:{ 'fees.tutionFeesBalance':-tution,'fees.busFeesBalance':-bus,  } })
      
-     let updateData = await BCA_STUDENT.findOne({registerNo},{name:1,fees:1,registerNo:1,email:1,degree:1,currentYear:1})
+     let updateData = await TAMIL_STUDENT.findOne({registerNo},{name:1,fees:1,registerNo:1,email:1,degree:1,currentYear:1})
 
     res.status(200).json({
         status:"Success",
@@ -385,7 +380,7 @@ exports.getStudentDataForUpdateFees = asyncErrorHandler( async (req,res,next) =>
 
     if( req.userData.role != "admin" ) throw new CustomError("Only admin can access",403)
 
-    let data = await BCA_STUDENT.find({name: { $regex: `^${req.query.name}` , $options: 'im' }},{name:1,fees:1,registerNo:1,email:1,degree:1,currentYear:1}).sort({degree:-1,currentYear:1})
+    let data = await TAMIL_STUDENT.find({name: { $regex: `^${req.query.name}` , $options: 'im' }},{name:1,fees:1,registerNo:1,email:1,degree:1,currentYear:1}).sort({degree:-1,currentYear:1})
     res.status(200).json({
         status:"Success",
         length:data.length,
@@ -402,14 +397,14 @@ exports.setSemesterFees = asyncErrorHandler( async (req,res,next) =>{
     if( !req.userData ) throw new CustomError("Unauthorized access",401)
     if( req.userData.role != "admin" ) throw new CustomError("Only admin can access",403)
 
-    let data = await BCA_STUDENT.findOne({registerNo},{fees:1})
+    let data = await TAMIL_STUDENT.findOne({registerNo},{fees:1})
 
     if( data.fees.tution && data.fees.bus )  throw new CustomError("All ready tution and bus fees was set",400)
 
     if( !data.fees.tution && !data.fees.bus){
 
-        await BCA_STUDENT.updateOne({registerNo},{ 'fees.tution':tution,'fees.tutionFeesBalance':tution, 'fees.bus':bus, 'fees.busFeesBalance':bus })
-        let updateData = await BCA_STUDENT.findOne({registerNo},{name:1,fees:1,registerNo:1,email:1,degree:1,currentYear:1})
+        await TAMIL_STUDENT.updateOne({registerNo},{ 'fees.tution':tution,'fees.tutionFeesBalance':tution, 'fees.bus':bus, 'fees.busFeesBalance':bus })
+        let updateData = await TAMIL_STUDENT.findOne({registerNo},{name:1,fees:1,registerNo:1,email:1,degree:1,currentYear:1})
         res.status(201).json({
             status:"Success",
             message:"Successfully updated",

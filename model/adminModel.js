@@ -2,8 +2,6 @@ const adminDB = require("./../config/adminDB")
 const mongoose = require("mongoose")
 const validators = require("validator")
 const bcrypt = require("bcryptjs")
-const { type } = require("os")
-
 
 const adminSchema = new mongoose.Schema({
     name:{
@@ -37,6 +35,9 @@ const adminSchema = new mongoose.Schema({
     },
     otp:{
         type:String,
+    },
+     optExpires:{
+        type:Number
     }
 })
 

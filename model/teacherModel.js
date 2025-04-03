@@ -2,8 +2,11 @@ const mongoose =  require("mongoose")
 const bcrypt = require("bcryptjs")
 const validator = require("validator")
 
+
 const CS_DB = require("./../config/CS_DB")
 const BCA_DB = require("./../config/BCA_DB")
+const tamilDB = require("./../config/tamilDB")
+const libraryDB = require("./../config/libraryDB")
 
 
 
@@ -29,7 +32,7 @@ const teacherSchema = new mongoose.Schema({
         select:false
     },
     department:{
-        type:Array,
+        type:String,
         required:[true,"Department name is reauired"]
 
     },
@@ -74,6 +77,9 @@ const teacherSchema = new mongoose.Schema({
     },
     otp:{
         type:String
+    },
+    optExpires:{
+        type:Number
     }
 
 },{
@@ -88,5 +94,7 @@ teacherSchema.method.verifyOTP = function (req,res,next) {
 
 const CS_Teacther =  CS_DB.model("cs_teacher",teacherSchema)
 const BCA_Teacther =  BCA_DB.model("bca_teachers",teacherSchema) 
+const tamil_teacher = tamilDB.model("tamil_teacher",teacherSchema)
+const librarian = libraryDB.model("librarians",teacherSchema)
 
-module.exports = { CS_Teacther, BCA_Teacther}
+module.exports = { CS_Teacther, BCA_Teacther, tamil_teacher, librarian}

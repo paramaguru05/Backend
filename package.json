@@ -5,6 +5,7 @@
   "dependencies": {
     "@types/express": "^5.0.0",
     "@types/node": "^22.7.4",
+    "artillery": "^2.0.21",
     "axios": "^1.7.7",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",

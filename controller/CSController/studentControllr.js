@@ -5,9 +5,15 @@ const CustomError = require("./../../utils/customError")
 const jwt = require("jsonwebtoken")
 
 
+exports.test = asyncErrorHandler ( async (req,res,next) =>{
+    res.status(200).json({
+        message:"test route"
+    })
+})
+
 exports.createStudent = asyncErrorHandler(async (req,res,next) =>{
 
-    if( req.userData.role === "admin" ){
+    if( req?.userData?.role === "admin" ){
         console.log(req.userData.role)
     }else{
         let csPattern = /computer science/i
@@ -29,8 +35,41 @@ exports.createStudent = asyncErrorHandler(async (req,res,next) =>{
 exports.getStudents = asyncErrorHandler( async(req,res) =>{
        
        if( req?.userData?.role === "staff" || req?.userData?.role === "HOD" || req?.userData?.role === "admin"){ 
+
+        if( req?.userData?.role != "admin" && req?.userData?.route != "CS"  ) throw new CustomError("Only compute science staff or admin can access",401);
+
             let feature =  new ApiFeatures(CS_STUDENT.find(),req.query).filter().limitFields().sort().limit()
             let data = await feature.query
+            res.status(200).json({
+                status:"Success",
+                length: data.length,
+                data:{
+                    data
+                }
+            })
+       }else{
+        throw new CustomError("Only staff can access",401)
+       }
+})
+exports.createAttenanceList = asyncErrorHandler( async(req,res) =>{
+       
+       if( req?.userData?.role === "staff" || req?.userData?.role === "HOD" || req?.userData?.role === "admin"){ 
+
+            
+            let currentDay = new Date
+            currentDay = currentDay.toLocaleDateString()
+
+            let singleData = await CS_STUDENT.findOne({currentYear:req.query.currentYear,degree:req.query.degree})
+            console.log(singleData)
+            
+            if(singleData.attendance[ singleData.attendance.length - 1 ].date === currentDay){
+                throw new CustomError("Attendance was already posted",400)
+            }
+
+
+            let feature =  new ApiFeatures(CS_STUDENT.find(),req.query).filter().limitFields().sort().limit()
+            let data = await feature.query
+
             res.status(200).json({
                 status:"Success",
                 length: data.length,
@@ -67,7 +106,7 @@ exports.studentLogin = asyncErrorHandler(async (req,res,next) =>{
           dob[2] = dob[2].slice(1)
         }
         withoutZero = dob.join("-")
-        console.log( id, DOB,withoutZero )
+  
         
         if( !id || !DOB) throw new CustomError("Register number or date of birth is incorected",400)
 
@@ -103,6 +142,13 @@ exports.getAttendance = asyncErrorHandler( async ( req, res, next )=>{
     }
 
     let {date,year,degree,present} = req.query    
+
+    let currentDay = new Date
+
+    if( !date) date = currentDay.toLocaleDateString() 
+
+    if( date ) date = date.replace(/\b(-)\b/g, (match)=> `/`)
+   
 
     let data = await CS_STUDENT.aggregate([
         {
@@ -229,15 +275,16 @@ exports.getAttendance = asyncErrorHandler( async ( req, res, next )=>{
 
 exports.updateStudent = asyncErrorHandler(async (req, res, next) =>{
     
-    if( !req.userData) throw new CustomError("Unauthorized access",401)
 
-    console.log("Check user", req.userData)
-
-    let csPattern = /computer science/i
-    if(req?.userData?.role != "staff" && req?.userData?.role != "HOD" ){
-        throw new CustomError("Only computer science staff or HOD can delete a student",401)
-    }else if( !csPattern.test(req?.userData?.department[0]) ){
-        throw new CustomError("Only computer science staff or HOD can delete a student",401)
+    if( req?.userData?.role === "admin" ){
+        console.log(req.userData.role)
+    }else{
+        let csPattern = /computer science/i
+        if(req?.userData?.role != "staff" && req?.userData?.role != "HOD" ){
+            throw new CustomError("Only staff or HOD can update a student",401)
+        }else if( !csPattern.test(req?.userData?.department[0]) ){
+            throw new CustomError("Only computer science staff or HOD can update a student",401)
+        }
     }
 
     const {registerNo} = req.body
@@ -247,7 +294,7 @@ exports.updateStudent = asyncErrorHandler(async (req, res, next) =>{
     await CS_STUDENT.updateOne({registerNo},req.body,{runValidators:true})
 
     res.status(200).json({
-        message:"Data recived"
+        message:"Student updated successfully"
     })
 
 })
@@ -266,10 +313,11 @@ exports.deleteStudent = asyncErrorHandler(async (req,res,next) =>{
     const {id} =  req.params 
 
     await CS_STUDENT.deleteOne({registerNo:id})
+    
 
-        res.status(200).json({
-            message:"Successfully student deleted"
-        })
+    res.status(200).json({
+        message:"Successfully student deleted"
+    })
 })
 
 
@@ -292,36 +340,6 @@ exports.createMultipleStudents = asyncErrorHandler( async (req,res,next)=>{
         status:"Success",
         message:"Multiple CS student created successfully"
     })
-})
-
-exports.productStudent = asyncErrorHandler( async (req,res,next) =>{
-
-    if( req?.userData?.role === "staff" || req?.userData?.role === "HOD" || req?.userData?.role === "admin" ){
-        console.log("Student product not working")
-        return next()
-    }
-
-    let decodeToken;
-    if( req.headers.authorization && req.headers.authorization.startsWith('bearer') ){
-     decodeToken = req.headers.authorization.split(' ')[1]
-    }else{
-     throw new CustomError("Unauthorized access please login into access resourse",401)
-    }    
-
-    // let {id} = await util.promisify(jwt.verify)(decodeToken,process.env.SECRET_STR,{})
-    let {id} = jwt.verify(decodeToken,process.env.SECRET_STR)
-
-    let data = await CS_STUDENT.findById(id)
-
-    if( !data ){
-        throw new CustomError("Unauthorized can not access resourses",401)
-    }else if( req.params.id && data.email != req.params.id && data.registerNo != req.params.id){
-        throw new CustomError("Unauthorized  can not access resourses",401)
-    }
- 
-    req.userRole = data.role
-    req.userData = data
-    next()
 })
 
 exports.updateFees = asyncErrorHandler( async (req,res,next) =>{

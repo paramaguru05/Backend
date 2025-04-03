@@ -1,0 +1,9 @@
+config:
+  target: "http://localhost:3501" # Base URL of your Express server
+  phases:
+    - duration: 1   # Run the test for 30 seconds
+      arrivalRate: 1 # 50 requests per second
+scenarios:
+  - flow:
+      - get:
+          url: "/api/v1/CS/students" # Endpoint to test
