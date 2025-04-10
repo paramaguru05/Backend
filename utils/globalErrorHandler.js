@@ -17,6 +17,14 @@ const handleJWTExpireError = (err) =>{
     return new CustomError(err.message,403)
 }
 
+const handleValidationError = (err) =>{
+    return new CustomError(err.message,400)
+}
+
+const handleCastError = (err) =>{
+    return new CustomError("Provid valid id",400)
+}
+
 module.exports = (error,req,res,next)=>{
     console.log( "Globale error handler", error )
 
@@ -25,7 +33,12 @@ module.exports = (error,req,res,next)=>{
     if(error.name === "JsonWebTokenError") error = handleJWTError(error);
 
     if(error.name === "TokenExpiredError") error = handleJWTExpireError(error)
+    
+    if(error.name === "ValidationError") error = handleValidationError(error)
+    
+    if(error.name === "CastError") error = handleCastError(error)
 
+    
     res.status( error.statusCode || 500 ).json({
         status: error.status || "error" ,
         statusCode: error.statusCode,

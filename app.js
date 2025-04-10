@@ -8,6 +8,7 @@ const libraryRouter = require("./router/libraryRouter")
 const adminRoute = require("./router/adminRouter")
 const GEH = require("./utils/globalErrorHandler")
 
+
 app.use( express.json())
 
 
@@ -16,6 +17,7 @@ app.use( cors() )
 app.get("/",(req,res,)=>{
     res.send({data:"Home page"})
 })
+
 
 app.use("/api/v1/admins/",adminRoute)
 app.use("/api/v1/tamil/",tamilRouter)

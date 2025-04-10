@@ -13,13 +13,15 @@ exports.test = asyncErrorHandler ( async (req,res,next) =>{
 
 exports.createStudent = asyncErrorHandler(async (req,res,next) =>{
 
+    console.log( req.userData)
+
     if( req?.userData?.role === "admin" ){
         console.log(req.userData.role)
     }else{
-        let csPattern = /computer science/i
+        
         if(req?.userData?.role != "staff" && req?.userData?.role != "HOD" ){
             throw new CustomError("Only staff or HOD can add a student",401)
-        }else if( !csPattern.test(req?.userData?.department[0]) ){
+        }else if( req?.userData?.route != "CS" ){
             throw new CustomError("Only computer science staff or HOD can add a student",401)
         }
     }
@@ -277,12 +279,12 @@ exports.updateStudent = asyncErrorHandler(async (req, res, next) =>{
     
 
     if( req?.userData?.role === "admin" ){
-        console.log(req.userData.role)
+        
     }else{
-        let csPattern = /computer science/i
+        
         if(req?.userData?.role != "staff" && req?.userData?.role != "HOD" ){
             throw new CustomError("Only staff or HOD can update a student",401)
-        }else if( !csPattern.test(req?.userData?.department[0]) ){
+        }else if( req?.userData?.route != "CS"  ){
             throw new CustomError("Only computer science staff or HOD can update a student",401)
         }
     }
@@ -303,10 +305,10 @@ exports.deleteStudent = asyncErrorHandler(async (req,res,next) =>{
 
     if( !req.userData) throw new CustomError("Unauthorized access",401)
         
-    let csPattern = /computer science/i
+   
     if(req?.userData?.role != "staff" && req?.userData?.role != "HOD" ){
        throw new CustomError("Only computer science staff or HOD can delete a student",401)
-    }else if( !csPattern.test(req?.userData?.department[0]) ){
+    }else if( req?.userData?.route != "CS" ){
        throw new CustomError("Only computer science staff or HOD can delete a student",401)
     }
 
@@ -356,15 +358,15 @@ exports.updateFees = asyncErrorHandler( async (req,res,next) =>{
 
     let data =  await CS_STUDENT.findOne({registerNo},{name:1,fees:1,registerNo:1,email:1,degree:1,currentYear:1})
     
-    if( tution > 0 && data.fees.tutionFeesBalance === 0 ) throw new CustomError("All ready tution fees fully payed ",400)
+    if( tution > 0 && data.fees.tutionFeesBalance === 0 ) throw new CustomError("All ready tuition fees fully payed ",400)
     
      if( bus > 0 && data.fees.busFeesBalance === 0 ) throw new CustomError("All ready bus fees fully  payed ",400)
 
-    if( tution >= data.fees.tutionFeesBalance + 1 ) throw new CustomError("Can not pay more then blance tution fees ammount",400)
+    if( tution >= data.fees.tutionFeesBalance + 1 ) throw new CustomError("Can't pay more then blance tuition fees ammount",400)
     
    
 
-    if( bus >= data.fees.busFeesBalance + 1 ) throw new CustomError("Can not pay more then blance bus fees ammount",400)
+    if( bus >= data.fees.busFeesBalance + 1 ) throw new CustomError("Can't pay more then blance bus fees ammount",400)
     
 
      await CS_STUDENT.updateOne({registerNo}, {$inc:{ 'fees.tutionFeesBalance':-tution,'fees.busFeesBalance':-bus,  } })
@@ -404,7 +406,7 @@ exports.setSemesterFees = asyncErrorHandler( async (req,res,next) =>{
 
     let data = await CS_STUDENT.findOne({registerNo},{fees:1})
 
-    if( data.fees.tution && data.fees.bus )  throw new CustomError("All ready tution and bus fees was set",400)
+    if( data.fees.tution && data.fees.bus )  throw new CustomError("All ready tuition and bus fees was set",400)
 
     if( !data.fees.tution && !data.fees.bus){
 

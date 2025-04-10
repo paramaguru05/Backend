@@ -18,6 +18,8 @@ exports.postAnnounce = asyncErrorHandler( async (req,res,next) =>{
 
 exports.getAnnounce = asyncErrorHandler( async (req,res,next)=>{
 
+    console.log("Test announdement")
+
     let data = await admin_announce.find().sort({createdAt:-1})
     if(!data.length) throw new CustomError("Data not found",404)
     res.status(200).json({

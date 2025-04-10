@@ -150,7 +150,8 @@ exports.forgetPassword = asyncErrorHandler( async(req,res,nex)=>{
         payload:{
             otp,
             email:data.email,
-            route:data.route
+            route:data.route,
+            role:data.role
         }
     })
 })

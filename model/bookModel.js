@@ -1,5 +1,6 @@
 const mongoose = require('mongoose')
 const libraryDb = require("./../config/libraryDB")
+const { type } = require('os')
 
 const bookSchema = new mongoose.Schema({
     name:{
@@ -14,9 +15,21 @@ const bookSchema = new mongoose.Schema({
         type:String,
         required:[true,"Category is required"]
     },
+    stack:{
+        type:Number,
+        required:[true,"Stack is required"]
+    },
+    currentStack:{
+        type:Number,
+        default:0
+    },
     description:{
         type:String,
         required:[true,"Description is required"]
+    },
+    studentsData:{
+        type:Array,
+        default:[]
     }
 })
 

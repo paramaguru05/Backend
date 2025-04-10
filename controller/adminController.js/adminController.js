@@ -1,9 +1,18 @@
+const EventEmitter = require("events")
+
+const eventEmiiter = new EventEmitter
+
 const asyncErrorHandler = require("./../../utils/asyncErrorHandler")
 const CustomError = require("./../../utils/customError")
-const ApiFeatuer = require("./../../utils/apiFeatures")
+
+const {BCA_Teacther,CS_Teacther,librarian,tamil_teacher} = require("./../../model/teacherModel")
+const {BCA_STUDENT,CS_STUDENT,TAMIL_STUDENT} = require("./../../model/studentModel")
+
 const sentMail = require("./../../utils/sentMail")
 const adminModel = require("./../../model/adminModel")
 const jwt = require("jsonwebtoken")
+const fs = require("fs")
+const path = require("path")
 
 exports.getAdmins = asyncErrorHandler( async (req,res,next)=>{
     
@@ -17,6 +26,7 @@ exports.getAdmins = asyncErrorHandler( async (req,res,next)=>{
         data = await adminModel.findById(id)
         if( !data._id ) throw new CustomError("data not found",404)
     }else{
+        delete req.query.id 
         data = await adminModel.find()
         if( !data.length ) throw new CustomError("data not found",404)
     }
@@ -29,6 +39,53 @@ exports.getAdmins = asyncErrorHandler( async (req,res,next)=>{
         }
     })
 
+})
+
+exports.getSingleAdmin = asyncErrorHandler( async (req,res,next) =>{
+
+    if( req?.userData?.role != "admin" ) throw new CustomError("Only admin can handle",401)
+
+    let id =  req.query.id 
+    if( !id ) throw new CustomError("Can't get without admin id",400)
+    
+    let data = await adminModel.findById(id)
+
+    if(!data._id) throw new CustomError("Data not found",404)
+
+    // student database
+    
+    let cs_students_count = await CS_STUDENT.countDocuments()
+    let bca_students_count = await BCA_STUDENT.countDocuments()
+    let tamil_students_count = await TAMIL_STUDENT.countDocuments()
+
+    let totalStudents = cs_students_count + bca_students_count + tamil_students_count
+
+    // staff database 
+
+    let tamil_staff_count = await tamil_teacher.countDocuments()
+    let bca_staff_count = await BCA_Teacther.countDocuments()
+    let cs_staff_count = await CS_Teacther.countDocuments()
+    let librarian_staff_count = await librarian.countDocuments()
+
+    let totalStaff = tamil_staff_count + bca_staff_count + cs_staff_count
+    
+    let mergedData = {
+        _id:data._id,
+        name:data.name,
+        role:data.role,
+        phoneNo:data.phoneNo,
+        totalStudents,
+        totalStaff,
+        librarianCount:librarian_staff_count
+
+    }
+
+    res.status(200).json({
+        status:"Success",
+        data:{
+            mergedData
+        }
+    })
 })
 
 exports.createAdmin = asyncErrorHandler( async (req,res,next) =>{
@@ -48,7 +105,7 @@ exports.deleteAdmin = asyncErrorHandler( async (req,res,next) =>{
 
     if( !req.userData || req.userData.role != "admin") throw new CustomError("Only admin can access",403)
 
-    let id = req.params.id
+    let id = req.query.id
     await adminModel.deleteOne({email:id})
     res.status(200).json({
         status:"Success",
@@ -95,12 +152,6 @@ exports.adminLogin = asyncErrorHandler( async (req,res,next) =>{
     })
 
 } )
-
-exports.getSingleAdmin = asyncErrorHandler( async (req,res,next)=>{
-    res.status(200).json({
-        message:"Test single admin"
-    })
-})
 
 exports.forgetPassword = asyncErrorHandler ( async (req,res,next) =>{
     let email = req.body.email
@@ -173,8 +224,9 @@ exports.productAdmin = asyncErrorHandler ( async (req,res,next) =>{
     }else{
         throw new CustomError("Unauthorized access please login into access resourse",401)
     }
-    
+
     let {id,role} = jwt.verify(decodeToken,process.env.SECRET_STR,)
+
 
     if( role === "admin"){
         console.log("Admin product working")
@@ -188,4 +240,57 @@ exports.productAdmin = asyncErrorHandler ( async (req,res,next) =>{
     }
     
 
+})
+
+
+exports.postStudentResults = asyncErrorHandler( async (req,res,next) =>{
+    
+
+    if( !fs.existsSync(path.join(__dirname,"..","..","devData","examResult.json")) ) throw new CustomError("File not found",404);
+
+    let resultData = JSON.parse(fs.readFileSync( path.join(__dirname,"..","..","devData","examResult.json") ,'utf-8') )
+
+   
+    let departments = {
+        cs:[],
+        bca:[],
+        tamil:[]
+    }
+
+
+    resultData.forEach( val =>{
+        if( val.department === "computer science" ){
+            departments.cs.push( val )
+        }else if( val.department === "BCA"){
+            departments.bca.push( val )
+        }else if( val.department === "Tamil"){
+            departments.tamil.push( val )
+        }
+    })
+    
+    eventEmiiter.emit("update_result",departments)
+
+    res.status(200).json({
+        status:"Success",
+        message: resultData[0]
+    })
+})
+
+eventEmiiter.on("update_result", async (departments)=>{
+    let cs_results = departments.cs 
+    let bca_results = departments.bca
+    let tamil_results = departments.tamil
+
+    
+    for( let result of cs_results ){
+       await CS_STUDENT.updateOne( { registerNo: result.registerNo}, { $push:{ result: result } } )
+    }
+
+    for( let result of bca_results ){
+       await BCA_STUDENT.updateOne( { registerNo: result.registerNo}, { $push:{ result: result } } )
+    }
+
+    for( let result of tamil_results ){
+       await TAMIL_STUDENT.updateOne( { registerNo: result.registerNo}, { $push:{ result: result } } )
+    }
 })

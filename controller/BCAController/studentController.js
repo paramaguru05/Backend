@@ -24,11 +24,12 @@ exports.createStudent = asyncErrorHandler(async (req,res,next) =>{
         }
     }
     
-      req.body.route = "CS"
+    
         await BCA_STUDENT.create(req.body)
+        await BCA_STUDENT.updateMany({route:{$exists:false}},{$set:{route:"BCA"}})
         res.status(201).json({
             status:"Success",
-            message:"Student created successfully"
+            message:"Student successfully created "
         })
 })
 
@@ -336,7 +337,7 @@ exports.postAttendance = asyncErrorHandler(async (req,res,next) =>{
 
 exports.createMultipleStudents = asyncErrorHandler( async (req,res,next)=>{
     await BCA_STUDENT.insertMany(req.body)
-    await BCA_STUDENT.updateMany({route:{$exists:false}},{$set:{route:"CS"}})
+    await BCA_STUDENT.updateMany({route:{$exists:false}},{$set:{route:"BCA"}})
     res.status(200).json({
         status:"Success",
         message:"Multiple CS student created successfully"
@@ -357,15 +358,15 @@ exports.updateFees = asyncErrorHandler( async (req,res,next) =>{
 
     let data =  await BCA_STUDENT.findOne({registerNo},{name:1,fees:1,registerNo:1,email:1,degree:1,currentYear:1})
     
-    if( tution > 0 && data.fees.tutionFeesBalance === 0 ) throw new CustomError("All ready tution fees fully payed ",400)
+    if( tution > 0 && data.fees.tutionFeesBalance === 0 ) throw new CustomError("All ready tuition fees fully payed ",400)
     
      if( bus > 0 && data.fees.busFeesBalance === 0 ) throw new CustomError("All ready bus fees fully  payed ",400)
 
-    if( tution >= data.fees.tutionFeesBalance + 1 ) throw new CustomError("Can not pay more then blance tution fees ammount",400)
+    if( tution >= data.fees.tutionFeesBalance + 1 ) throw new CustomError("Can't pay more then blance tuition fees ammount",400)
     
    
 
-    if( bus >= data.fees.busFeesBalance + 1 ) throw new CustomError("Can not pay more then blance bus fees ammount",400)
+    if( bus >= data.fees.busFeesBalance + 1 ) throw new CustomError("Can't pay more then blance bus fees ammount",400)
     
 
      await BCA_STUDENT.updateOne({registerNo}, {$inc:{ 'fees.tutionFeesBalance':-tution,'fees.busFeesBalance':-bus,  } })
@@ -404,7 +405,7 @@ exports.setSemesterFees = asyncErrorHandler( async (req,res,next) =>{
 
     let data = await BCA_STUDENT.findOne({registerNo},{fees:1})
 
-    if( data.fees.tution && data.fees.bus )  throw new CustomError("All ready tution and bus fees was set",400)
+    if( data.fees.tution && data.fees.bus )  throw new CustomError("All ready tuition and bus fees was set",400)
 
     if( !data.fees.tution && !data.fees.bus){
 

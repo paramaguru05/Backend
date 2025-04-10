@@ -1,4 +1,4 @@
-const {createAttenanceList,createStudent,getStudent,studentLogin,getStudents,updateStudent,deleteStudent,postAttendance,createMultipleStudents,getAttendance,updateFees,getStudentDataForUpdateFees,setSemesterFees} = require("./../controller/BCAController/studentController")
+const {createAttenanceList,createStudent,getStudent,studentLogin,getStudents,updateStudent,deleteStudent,postAttendance,getAttendance,updateFees,getStudentDataForUpdateFees,setSemesterFees} = require("./../controller/BCAController/studentController")
 const {updateStaff,createTeacher,getTeachers,staffLogin,getSingleStaff,deleteStaff,forgetPassword,verifyOTP,resetPassword} = require("./../controller/BCAController/teacherController")
 const {deleteAnnouncement,getAnnouncement,postAnnouncement} = require("./../controller/BCAController/announcementController")
 const {productAdmin} = require("./../controller/adminController.js/adminController")
@@ -22,8 +22,6 @@ router.route("/students/:id")
       .get(productAdmin,productStaff,productStudents,getStudent)
       
 
-router.route('/multi-students')
-      .post(productStaff,createMultipleStudents)
 
 // route for staff
 router.route('/staff')

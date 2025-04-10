@@ -59,8 +59,6 @@ exports.getTeachers = asyncErrorHandler( async ( req, res,next ) =>{
 
 exports.getSingleStaff = asyncErrorHandler( async (req,res,next) =>{
    
-    console.log( req.userData )
-
    if(!req.userData) throw new CustomError("Unauthorized access please login into access resourse",401);
    
    if( req.userData.route != "CS") throw new CustomError("Can not access other department staff",401)

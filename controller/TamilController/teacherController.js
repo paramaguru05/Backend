@@ -5,6 +5,7 @@ const ApiFeatures = require("./../../utils/apiFeatures")
 const validator = require("validator")
 const jwt = require("jsonwebtoken")
 const bcript = require("bcryptjs")
+const {sendEmail} = require("./../../utils/sentMail")
 
 exports.createTeacher = asyncErrorHandler(async ( req, res, next ) =>{
 
@@ -133,13 +134,17 @@ exports.forgetPassword = asyncErrorHandler( async(req,res,nex)=>{
 
     data.otp = otp
     await data.save()
+
+    sendEmail(data.email,otp)
+
     res.status(200).json({
         status:"Success",
         message:"Account vrified",
         payload:{
             otp,
             email:data.email,
-            route:data.route
+            route:data.route,
+            role:data.role
         }
     })
 })

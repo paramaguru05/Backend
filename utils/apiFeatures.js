@@ -5,7 +5,7 @@ class ApiFeatures{
     constructor(query,queryString){
         this.query = query
         this.queryString = queryString 
-        this.excludeField = ["sort",'field','limit','skip']
+        this.excludeField = ["sort",'field','limit','skip','page']
         this.includeField = {}
     }
 
@@ -47,6 +47,13 @@ class ApiFeatures{
         if(this.includeField.limit){
             this.query = this.query.limit(this.includeField.limit)
            
+        }
+        return this
+    }
+    skip(){
+
+        if( this.includeField.skip || this.includeField.page ){
+            this.query = this.query.skip(this.includeField.page * this.includeField.limit)
         }
         return this
     }
