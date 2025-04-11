@@ -171,8 +171,6 @@ exports.getAttendance = asyncErrorHandler( async ( req, res, next )=>{
         }
     ])
 
-    console.log( data )
-
     const departmentAttendance = {
         UG:{
             firstYear:{

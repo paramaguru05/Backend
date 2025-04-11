@@ -13,8 +13,6 @@ exports.test = asyncErrorHandler ( async (req,res,next) =>{
 
 exports.createStudent = asyncErrorHandler(async (req,res,next) =>{
 
-    console.log( req.userData)
-
     if( req?.userData?.role === "admin" ){
         console.log(req.userData.role)
     }else{

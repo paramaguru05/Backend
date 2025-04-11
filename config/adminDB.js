@@ -2,7 +2,7 @@ const mongoose = require("mongoose")
 const dotenv = require("dotenv")
 dotenv.config({path:"./config.env"})
 
-const adminDB = mongoose.createConnection(process.env.LOCAL_DB+"adminDB")
+const adminDB = mongoose.createConnection(process.env.REMOTE_ADMIN_DB)
 
 adminDB.on("connected",()=>console.log("Successfully connected to admin database"))
 
